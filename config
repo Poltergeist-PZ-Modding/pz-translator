@@ -1,0 +1,5 @@
+[directories]
+# Used for populating the languages info json
+PZTranslateDir = \media\lua\shared\Translate
+# Directory with translations
+TargetDir = \media\lua\shared\Translate
