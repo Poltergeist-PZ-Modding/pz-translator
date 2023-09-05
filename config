@@ -1,5 +1,22 @@
-[directories]
-# Used for populating the languages info json
+[DEFAULT]
+target = TargetDir
+source = EN
+createDirs = False
+
+[Translate]
+### used to select a path from Directories
+; target
+### source language to populate the other files
+; source
+### False will not translate languages that don't have a language directory
+; createDirs = True
+### list of languages separated by ","
+; languages
+### list of files separated by ","
+; files
+
+[Directories]
+### Used for populating the languages info json
 PZTranslateDir = \media\lua\shared\Translate
-# Directory with translations
+### Directory with translations
 TargetDir = \media\lua\shared\Translate

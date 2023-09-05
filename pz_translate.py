@@ -12,10 +12,43 @@ FileList = [ "Challenge", "ContextMenu", "DynamicRadio", "EvolvedRecipeName", "F
 
 class pz_translator_zx:
     
-    def __init__(self,baseDir:str,source:str="EN"):
-        self.baseDir = baseDir
+    def __init__(self,baseDir:str="",source:str="EN",config:str=None):
+        if not config:
+            self.baseDir = baseDir
+            self.sourceLang = LanguagesDict[source]
+            self.translator = GoogleTranslator(self.sourceLang["translate"])
+        else:
+            self.fromConfig(config)
+
+    def fromConfig(self,file):
+        from configparser import ConfigParser
+        config = ConfigParser()
+        config.read(file)
+        self.baseDir = config["Directories"][config["Translate"]["target"]]
+        source = config["Translate"]["source"]
+        # source = config.get("Translate","source")
         self.sourceLang = LanguagesDict[source]
         self.translator = GoogleTranslator(self.sourceLang["translate"])
+        if "files" in config["Translate"]:
+            self.file = [x for x in config["Translate"]["files"].split(",") if x in FileList]
+        else:
+            self.files = FileList
+        # self.translateLanguages = self.getLanguagesFromConfig(config)
+        self.translateLanguages = []
+        createDirs = config["Translate"]["createDirs"]
+        languages = None
+        if "languages" in config["Translate"]:
+            languages = [x for x in languages.split(",") if x in LanguagesDict]
+        else:
+            languages = LanguagesDict
+        for id in languages:
+            if id == source:
+                continue
+            if os.path.isdir(os.path.join(self.baseDir,id)):
+                self.translateLanguages.append(LanguagesDict[id])
+            elif createDirs:
+                pathlib.Path(self.getFilePath(id)).mkdir()
+                self.translateLanguages.append(LanguagesDict[id])
 
     def getFilePath(self,langId: str, file: str = None):
         if not file:
@@ -154,6 +187,7 @@ class pz_translator_zx:
             if not oTexts:
                 continue
             for lang in self.translateLanguages:
+                print("Begin Translation Check for {file}, {lang}".format(file=file,lang=lang["text"]))
                 self.translator.target = lang["translate"]
                 self.writeTranslation(lang,file,templateText.format_map(self.getTranslations(oTexts,lang,file)))
 
@@ -169,7 +203,7 @@ class pz_translator_zx:
             elif createDirs:
                 pathlib.Path(self.getFilePath(id)).mkdir()
                 self.translateLanguages.append(LanguagesDict[id])
-        return self._translateAll()
+        self._translateAll()
 
     # used to reincode files
     def convertTranslations(self,readEncodes:dict,languages:list|dict =LanguagesDict,files=FileList):
@@ -188,8 +222,5 @@ class pz_translator_zx:
                     f.write(text)
                     f.close()
 
-if __name__ == '__main__':
-    from configparser import ConfigParser
-    config = ConfigParser()
-    config.read("config.ini")
-    pz_translator_zx(config["directories"]["TargetDir"]).translate()
+if __name__ == '__main__':    
+    pz_translator_zx(config="config.ini")._translateAll()
