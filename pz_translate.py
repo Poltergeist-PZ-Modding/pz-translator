@@ -1,6 +1,5 @@
 import os
 import pathlib
-import json
 from pz_languages import getLanguages
 from deep_translator import GoogleTranslator
 
@@ -16,7 +15,7 @@ class pz_translator_zx:
         if not config:
             self.baseDir = baseDir
             self.sourceLang = LanguagesDict[source]
-            self.translator = GoogleTranslator(self.sourceLang["translate"])
+            self.translator = GoogleTranslator(self.sourceLang["tr_code"])
         else:
             self.fromConfig(config)
 
@@ -28,21 +27,27 @@ class pz_translator_zx:
         source = config["Translate"]["source"]
         # source = config.get("Translate","source")
         self.sourceLang = LanguagesDict[source]
-        self.translator = GoogleTranslator(self.sourceLang["translate"])
+        self.translator = GoogleTranslator(self.sourceLang["tr_code"])
         if "files" in config["Translate"]:
-            self.file = [x for x in config["Translate"]["files"].split(",") if x in FileList]
+            self.files = [x for x in [x.strip() for x in config["Translate"]["files"].split(",")] if x in FileList]
         else:
             self.files = FileList
         # self.translateLanguages = self.getLanguagesFromConfig(config)
         self.translateLanguages = []
-        createDirs = config["Translate"]["createDirs"]
+        # createDirs = config["Translate"]["createDirs"]
+        createDirs = config.getboolean("Translate","createDirs")
         languages = None
         if "languages" in config["Translate"]:
-            languages = [x for x in languages.split(",") if x in LanguagesDict]
+            languages = [x for x in [x.strip() for x in config["Translate"]["languages"].split(",")] if x in LanguagesDict]
         else:
             languages = LanguagesDict
+        languagesBlacklist = None
+        if "languagesBlacklist" in config["Translate"]:
+            languagesBlacklist = {x for x in [x.strip() for x in config["Translate"]["languagesBlacklist"].split(",")] if x in LanguagesDict}
+        else:
+            languagesBlacklist = {}
         for id in languages:
-            if id == source:
+            if id == source or id in languagesBlacklist:
                 continue
             if os.path.isdir(os.path.join(self.baseDir,id)):
                 self.translateLanguages.append(LanguagesDict[id])
@@ -129,24 +134,28 @@ class pz_translator_zx:
     #     for key, value in oTexts.items():
     #         if key not in tTexts:
     #             try:
-    #                 translation = translator.translate(value, tLang["translate"], oLang.lower())
+    #                 translation = translator.translate(value, tLang["tr_code"], oLang.lower())
     #                 tTexts[key] = translation.text
     #             except:
     #                 print("Failed to translate: " + tTexts["language"] + " | " + value)
     #                 tTexts[key] = "tr?: " + value
 
-    def translate_batch(self,oTexts,tTexts):
+    def translate_batch(self,tLang,oTexts,tTexts):
         keys, values = [],[]
         for key in oTexts:
             if key not in tTexts:
                 keys.append(key)
-                values.append(oTexts[key])
+                values.append(oTexts[key].replace("<","<{").replace(">","}>").replace("%1","{%1}"))
         if keys:
             try:
-                print(tTexts["language"] + ") translating:\n",values)
+                print("    Translation size: ",len(values))
                 translations = self.translator.translate_batch(values)
                 for i,key in enumerate(keys):
-                    tTexts[key] = translations[i]
+                    tTexts[key] = translations[i].replace("{%1}","%1").replace("<{","<").replace("}>",">")
+                    try:
+                        tTexts[key].encode(tLang["charset"])
+                    except:
+                        print("can not encode: ",key,tTexts[key])
             except:
                 for i,k in enumerate(keys):
                     print("Failed to translate: " + tTexts["language"] + " | " + values[i])
@@ -155,31 +164,17 @@ class pz_translator_zx:
     def getTranslations(self,oTexts: dict, tLang: dict, file: str):
         trTexts = {"language":tLang["id"]}
         self.fillTranslationsFromFile(tLang,file,trTexts)
-        self.translate_batch(oTexts,trTexts)
+        self.translate_batch(tLang,oTexts,trTexts)
         return trTexts
 
     def writeTranslation(self,lang: dict, file: str, text: str):
         try:
-            with open(self.getFilePath(lang["id"],file),"w",encoding=lang["charset"]) as f:
-            # if lang.id == "CA":
-            #     text = text.translate(str.maketrans({"ó":r"├│",
-            #                                          "à":r"├á",
-            #                                          "è":r"├Ę",
-            #                                          "é":r"├ę",
-            #                                          "É":r"├ë",
-            #                                          "ò":r"├▓",
-            #                                          "ú":r"├║",
-            #                                          "ü":r"├╝",
-            #                                          "·":r"┬Ě",
-            #                                          "’":r"ÔÇÖ",
-            #                                          }))
+            with open(self.getFilePath(lang["id"],file),"w",encoding=lang["charset"],errors="replace") as f:
                 f.write(text)
         except Exception as e:
             print("Failed to write " + lang["id"] + " " + file)
-            print(text)
             print(e)
-        except:
-            print("Failed to write " + lang["id"] + " " + file)
+            print(text)
 
     def _translateAll(self):
         for file in self.files:
@@ -187,8 +182,8 @@ class pz_translator_zx:
             if not oTexts:
                 continue
             for lang in self.translateLanguages:
-                print("Begin Translation Check for {file}, {lang}".format(file=file,lang=lang["text"]))
-                self.translator.target = lang["translate"]
+                print("Begin Translation Check for: {lang}, {file}".format(file=file,lang=lang["text"]))
+                self.translator.target = lang["tr_code"]
                 self.writeTranslation(lang,file,templateText.format_map(self.getTranslations(oTexts,lang,file)))
 
     def translate(self,languages:list|dict=LanguagesDict,files:list=FileList,createDirs:bool=False):
@@ -224,3 +219,6 @@ class pz_translator_zx:
 
 if __name__ == '__main__':    
     pz_translator_zx(config="config.ini")._translateAll()
+
+### TODO: fix special cases e.g. %1, <br>...
+### TODO: fix wrong encodes ?

@@ -12,6 +12,7 @@ createDirs = False
 ; createDirs = True
 ### list of languages separated by ","
 ; languages
+; languagesBlacklist
 ### list of files separated by ","
 ; files
 

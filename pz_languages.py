@@ -1,71 +1,49 @@
 import os
 import json
 
-TranslationCodes = {
-    'AR': "es",
-    'CA': "ca",
-    'CH': "zh-tw",
-    'CN': "zh-cn",
-    'CS': "cs",
-    'DA': "da",
-    'DE': "de",
-    'EN': "en",
-    'ES': "es",
-    'FI': "fi",
-    'FR': "fr",
-    'HU': "hu",
-    'ID': "id",
-    'IT': "it",
-    'JP': "ja",
-    'KO': "ko",
-    'NL': "nl",
-    'NO': "no",
-    'PH': "tl",
-    'PL': "pl",
-    'PT': "pt",
-    'PTBR': "pt",
-    'RO': "ro",
-    'RU': "ru",
-    'TH': "th",
-    'TR': "tr",
-    'UA': "uk",
-}
-
 Aliases = {
-    'AR': ['Espanol (AR)'],
-    'CA': ['Catalan'],
-    'CH': ['Traditional Chinese'],
-    'CN': ['Simplified Chinese'],
-    'CS': ['Czech'],
-    'DA': ['Danish'],
-    'DE': ['Deutsch'],
-    'EN': ['English'],
-    'ES': ['Espanol (ES)'],
-    'FI': ['Finnish'],
-    'FR': ['Francais'],
-    'HU': ['Hungarian'],
-    'ID': ['Indonesia'],
-    'IT': ['Italiano'],
-    'JP': ['Japanese'],
-    'KO': ['Korean'],
-    'NL': ['Nederlands'],
-    'NO': ['Norsk'],
-    'PH': ['Tagalog'],
-    'PL': ['Polish'],
-    'PT': ['Portuguese'],
-    'PTBR': ['Brazilian Portuguese'],
-    'RO': ['Romanian'],
-    'RU': ['Russian'],
-    'TH': ['Thai'],
-    'TR': ['Turkish'],
-    'UA': ['Ukrainian'],
+    'AR': ['spanish'], #ar
+    'CA': ['catalan'],
+    'CH': ['chinese (traditional)'],
+    'CN': ['chinese (simplified)'],
+    'CS': ['czech'],
+    'DA': ['danish'],
+    'DE': ['german'],
+    'EN': ['english'],
+    'ES': ['spanish'],
+    'FI': ['finnish'],
+    'FR': ['french'],
+    'HU': ['hungarian'],
+    'ID': ['indonesian'],
+    'IT': ['italian'],
+    'JP': ['japanese'],
+    'KO': ['korean'],
+    'NL': ['dutch'],
+    'NO': ['norwegian'],
+    'PH': ['Tagalog','filipino'],
+    'PL': ['polish'],
+    'PT': ['portuguese'],
+    'PTBR': ['portuguese'], #br
+    'RO': ['romanian'],
+    'RU': ['russian'],
+    'TH': ['thai'],
+    'TR': ['turkish'],
+    'UA': ['ukrainian'],
 }
 
 def getTranslateDir():
     from configparser import ConfigParser
     config = ConfigParser()
     config.read("config.ini")
-    return config["directories"]["PZTranslateDir"]
+    return config["Directories"]["PZTranslateDir"]
+
+def getTranslateCodes(name):
+    if name == "google":
+        from deep_translator import GoogleTranslator
+        return GoogleTranslator().get_supported_languages(True)
+    elif name == "googletrans":
+        from googletrans.constants import LANGCODES
+        return LANGCODES
 
 # uses scriptblock - need improvement
 def readLanguageFile(filePath: str):
@@ -89,8 +67,9 @@ def readLanguageFile(filePath: str):
 
 # FIXME: Catalan has encoding issues - switch to Cp1252?
 def generateLanguagesInfo():
-    all = {}
     translateDir = getTranslateDir()
+    translateCodes = getTranslateCodes("google")
+    all = {}
     with os.scandir(translateDir) as tDir:
         for each in tDir:
             if each.is_dir():
@@ -98,8 +77,11 @@ def generateLanguagesInfo():
                 if not d:
                     continue
                 d["id"] = each.name
-                d["translate"] = TranslationCodes[each.name]
-                all[each.name] = sorted(d.items())
+                d["tr_code"] = next((translateCodes[x] for x in Aliases[each.name] if x in translateCodes) , None)
+                if not d["tr_code"]:
+                    print("no tr_code found for",each.name,d["text"])
+                    d["tr_code"] = "en"
+                all[each.name] = dict(sorted(d.items()))
                 # print("'"+ each.name + "': ['" + d["text"].lower() + "'],")
                 # print("| " + each.name + " | " + d["text"] + " | " + d["charset"] + " |")
     return all
@@ -114,3 +96,4 @@ def getLanguages(generate: bool):
     else:
         with open(LanguagesPath,"r",encoding="utf-8") as f:
             return json.load(f)
+

@@ -1,192 +1,192 @@
 {
   "AR": {
     "VERSION": "1",
-    "text": "Espanol (AR)",
     "charset": "Cp1252",
     "id": "AR",
-    "translate": "es"
+    "text": "Espanol (AR)",
+    "tr_code": "es"
   },
   "CA": {
     "VERSION": "1",
-    "text": "Catalan",
     "charset": "ISO-8859-15",
     "id": "CA",
-    "translate": "ca"
+    "text": "Catalan",
+    "tr_code": "ca"
   },
   "CH": {
     "VERSION": "1",
-    "text": "Traditional Chinese",
     "charset": "UTF-8",
     "id": "CH",
-    "translate": "zh-tw"
+    "text": "Traditional Chinese",
+    "tr_code": "zh-TW"
   },
   "CN": {
     "VERSION": "1",
-    "text": "Simplified Chinese",
     "charset": "UTF-8",
     "id": "CN",
-    "translate": "zh-cn"
+    "text": "Simplified Chinese",
+    "tr_code": "zh-CN"
   },
   "CS": {
     "VERSION": "1",
-    "text": "Czech",
     "charset": "Cp1250",
     "id": "CS",
-    "translate": "cs"
+    "text": "Czech",
+    "tr_code": "cs"
   },
   "DA": {
     "VERSION": "1",
-    "text": "Danish",
     "charset": "Cp1252",
     "id": "DA",
-    "translate": "da"
+    "text": "Danish",
+    "tr_code": "da"
   },
   "DE": {
     "VERSION": "1",
-    "text": "Deutsch",
     "charset": "Cp1252",
     "id": "DE",
-    "translate": "de"
+    "text": "Deutsch",
+    "tr_code": "de"
   },
   "EN": {
     "VERSION": "1",
-    "text": "English",
     "charset": "UTF-8",
     "id": "EN",
-    "translate": "en"
+    "text": "English",
+    "tr_code": "en"
   },
   "ES": {
     "VERSION": "1",
-    "text": "Espanol (ES)",
     "charset": "Cp1252",
     "id": "ES",
-    "translate": "es"
+    "text": "Espanol (ES)",
+    "tr_code": "es"
   },
   "FI": {
     "VERSION": "1",
-    "text": "Finnish",
     "charset": "Cp1252",
     "id": "FI",
-    "translate": "fi"
+    "text": "Finnish",
+    "tr_code": "fi"
   },
   "FR": {
     "VERSION": "1",
-    "text": "Francais",
-    "charset": "Cp1252",
     "azerty": "true",
+    "charset": "Cp1252",
     "id": "FR",
-    "translate": "fr"
+    "text": "Francais",
+    "tr_code": "fr"
   },
   "HU": {
     "VERSION": "1",
-    "text": "Hungarian",
     "charset": "Cp1250",
     "id": "HU",
-    "translate": "hu"
+    "text": "Hungarian",
+    "tr_code": "hu"
   },
   "ID": {
     "VERSION": "1",
-    "text": "Indonesia",
     "charset": "UTF-8",
     "id": "ID",
-    "translate": "id"
+    "text": "Indonesia",
+    "tr_code": "id"
   },
   "IT": {
     "VERSION": "1",
-    "text": "Italiano",
     "charset": "Cp1252",
     "id": "IT",
-    "translate": "it"
+    "text": "Italiano",
+    "tr_code": "it"
   },
   "JP": {
     "VERSION": "1",
-    "text": "Japanese",
     "charset": "UTF-8",
     "id": "JP",
-    "translate": "ja"
+    "text": "Japanese",
+    "tr_code": "ja"
   },
   "KO": {
     "VERSION": "1",
-    "text": "Korean",
     "charset": "UTF-16",
     "id": "KO",
-    "translate": "ko"
+    "text": "Korean",
+    "tr_code": "ko"
   },
   "NL": {
     "VERSION": "1",
-    "text": "Nederlands",
     "charset": "Cp1252",
     "id": "NL",
-    "translate": "nl"
+    "text": "Nederlands",
+    "tr_code": "nl"
   },
   "NO": {
     "VERSION": "1",
-    "text": "Norsk",
     "charset": "Cp1252",
     "id": "NO",
-    "translate": "no"
+    "text": "Norsk",
+    "tr_code": "no"
   },
   "PH": {
     "VERSION": "1",
-    "text": "Tagalog",
     "charset": "UTF-8",
     "id": "PH",
-    "translate": "tl"
+    "text": "Tagalog",
+    "tr_code": "tl"
   },
   "PL": {
     "VERSION": "1",
-    "text": "Polish",
     "charset": "Cp1250",
     "id": "PL",
-    "translate": "pl"
+    "text": "Polish",
+    "tr_code": "pl"
   },
   "PT": {
     "VERSION": "1",
-    "text": "Portuguese",
     "charset": "Cp1252",
     "id": "PT",
-    "translate": "pt"
+    "text": "Portuguese",
+    "tr_code": "pt"
   },
   "PTBR": {
     "VERSION": "1",
-    "text": "Brazilian Portuguese",
     "charset": "Cp1252",
     "id": "PTBR",
-    "translate": "pt"
+    "text": "Brazilian Portuguese",
+    "tr_code": "pt"
   },
   "RO": {
     "VERSION": "1",
-    "text": "Romanian",
     "charset": "UTF-8",
     "id": "RO",
-    "translate": "ro"
+    "text": "Romanian",
+    "tr_code": "ro"
   },
   "RU": {
     "VERSION": "1",
-    "text": "Russian",
     "charset": "Cp1251",
     "id": "RU",
-    "translate": "ru"
+    "text": "Russian",
+    "tr_code": "ru"
   },
   "TH": {
     "VERSION": "1",
-    "text": "Thai",
     "charset": "UTF-8",
     "id": "TH",
-    "translate": "th"
+    "text": "Thai",
+    "tr_code": "th"
   },
   "TR": {
     "VERSION": "1",
-    "text": "Turkish",
     "charset": "Cp1254",
     "id": "TR",
-    "translate": "tr"
+    "text": "Turkish",
+    "tr_code": "tr"
   },
   "UA": {
     "VERSION": "1",
-    "text": "Ukrainian",
     "charset": "Cp1251",
     "id": "UA",
-    "translate": "uk"
+    "text": "Ukrainian",
+    "tr_code": "uk"
   }
 }
