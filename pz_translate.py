@@ -1,6 +1,6 @@
 import os
 import pathlib
-from pz_languages import getLanguages
+from pz_languages_info import getLanguages
 from deep_translator import GoogleTranslator
 
 LanguagesDict = getLanguages(False)

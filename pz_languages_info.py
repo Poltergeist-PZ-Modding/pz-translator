@@ -86,7 +86,7 @@ def generateLanguagesInfo():
                 # print("| " + each.name + " | " + d["text"] + " | " + d["charset"] + " |")
     return all
 
-def getLanguages(generate: bool):
+def getLanguages(generate: bool = False):
     LanguagesPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "LanguagesInfo.json")
     if generate or not os.path.isfile(LanguagesPath):
         d = generateLanguagesInfo()
