@@ -20,7 +20,7 @@ Aliases = {
     'KO': ['korean'],
     'NL': ['dutch'],
     'NO': ['norwegian'],
-    'PH': ['Tagalog','filipino'],
+    'PH': ['tagalog','filipino'],
     'PL': ['polish'],
     'PT': ['portuguese'],
     'PTBR': ['portuguese'], #br

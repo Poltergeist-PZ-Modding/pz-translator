@@ -11,15 +11,15 @@ FileList = [ "Challenge", "ContextMenu", "DynamicRadio", "EvolvedRecipeName", "F
 
 class pz_translator_zx:
     
-    def __init__(self,baseDir:str="",source:str="EN",config:str=None,gitAtr:bool=True):
-        if not config:
+    def __init__(self,baseDir:str,source:str="EN",config:str|None=None,gitAtr:bool=False):
+        if config:
+            self.fromConfig(config)
+        else:
             self.baseDir = baseDir
             self.sourceLang = LanguagesDict[source]
             self.translator = GoogleTranslator(self.sourceLang["tr_code"])
-        else:
-            self.fromConfig(config)
         if gitAtr:
-            self.checkGitAtributesFile(False)
+            self.checkGitAtributesFile()
 
     def fromConfig(self,file):
         from configparser import ConfigParser
@@ -219,19 +219,15 @@ class pz_translator_zx:
                     f.write(text)
                     f.close()
 
-    def checkGitAtributesFile(self,force:bool=False):
+    def checkGitAtributesFile(self):
         fPath = os.path.join(self.baseDir,".gitattributes")
-        if force or not os.path.isfile(fPath):
-            if os.path.isdir(fPath):
-                return
-            text = None
-            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".gitatributes-template.txt"),"r",encoding="utf-8") as f:
-                text = f.read()
-            with open(fPath,"w",encoding="utf-8") as f:
-                f.write(text)            
+        if os.path.exists(fPath):
+            return
+        text = None
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".gitatributes-template.txt"),"r",encoding="utf-8") as f:
+            text = f.read()
+        with open(fPath,"w",encoding="utf-8") as f:
+            f.write(text)
 
 if __name__ == '__main__':    
-    pz_translator_zx(config="config.ini")._translateAll()
-
-### TODO: fix special cases e.g. %1, <br>...
-### TODO: fix wrong encodes ?
+    pz_translator_zx("",config="config.ini",gitAtr=True)._translateAll()
