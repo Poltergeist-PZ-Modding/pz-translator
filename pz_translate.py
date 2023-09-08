@@ -104,7 +104,7 @@ class pz_translator_zx:
 
     def fillTranslationsFromFile(self,lang:dict,file:str,trTexts:dict):
         try:
-            with open(self.getFilePath(lang["id"],file),'r',encoding=lang["charset"]) as f:
+            with open(self.getFilePath(lang["id"],file),'r',encoding=lang["charset"],errors="replace") as f:
                 validLine = False
                 key = ""
                 text = ""
@@ -178,13 +178,13 @@ class pz_translator_zx:
             print(e)
             print(text)
 
-    def _translateAll(self):
+    def translate_self(self):
         for file in self.files:
             templateText, oTexts = self.readSourceFile(file)
             if not oTexts:
                 continue
             for lang in self.translateLanguages:
-                print("Begin Translation Check for: {lang}, {file}".format(file=file,lang=lang["text"]))
+                print("Begin Translation Check for: {file}, {id}, {lang} ".format(file=file,id=lang["id"],lang=lang["text"]))
                 self.translator.target = lang["tr_code"]
                 self.writeTranslation(lang,file,templateText.format_map(self.getTranslations(oTexts,lang,file)))
 
@@ -200,34 +200,41 @@ class pz_translator_zx:
             elif createDirs:
                 pathlib.Path(self.getFilePath(id)).mkdir()
                 self.translateLanguages.append(LanguagesDict[id])
-        self._translateAll()
+        self.translate_self()
 
     # used to reincode files
-    def convertTranslations(self,readEncodes:dict,languages:list|dict =LanguagesDict,files=FileList):
+    def convertTranslations(self,readEncodes:dict,languages:list=LanguagesDict,files:list=FileList):
         for id in languages:
             lang = LanguagesDict[id]
             for file in files:
                 oFile = self.getFilePath(id,file)
                 if os.path.isfile(oFile):
-                    f = open(oFile,"r", encoding=readEncodes[id])
+                    f = open(oFile,"r", encoding=readEncodes[id],errors="replace")
                     text = f.read()
                     f.close()
 
-                    # text.encode("utf-8")
-
-                    f = open(oFile,"w", encoding=lang["charset"])
+                    f = open(oFile,"w", encoding=lang["charset"],errors="replace")
                     f.write(text)
                     f.close()
+
+    def reencode_self(self):
+        '''
+        Rewrites existing files, assumes files were using correct encoding. 
+
+        Use when first adding gitattributes file without translating files.
+        '''
+
+        self.convertTranslations({ lang["id"] : lang["charset"] for lang in self.translateLanguages},[x["id"] for x in self.translateLanguages],self.files)
 
     def checkGitAtributesFile(self):
         fPath = os.path.join(self.baseDir,".gitattributes")
         if os.path.exists(fPath):
             return
         text = None
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".gitatributes-template.txt"),"r",encoding="utf-8") as f:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".gitattributes-template.txt"),"r",encoding="utf-8") as f:
             text = f.read()
         with open(fPath,"w",encoding="utf-8") as f:
             f.write(text)
 
 if __name__ == '__main__':    
-    pz_translator_zx("",config="config.ini",gitAtr=True)._translateAll()
+    pz_translator_zx("",config="config.ini",gitAtr=True).translate_self()
