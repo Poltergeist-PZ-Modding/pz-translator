@@ -2,22 +2,23 @@ import os
 import pathlib
 from pz_languages_info import getLanguages
 from deep_translator import GoogleTranslator
+import json
 
 LanguagesDict = getLanguages(False)
-# translations also have %Map/ files
+
 FileList = [ "Challenge", "ContextMenu", "DynamicRadio", "EvolvedRecipeName", "Farming", "GameSound", 
             "IG_UI", "ItemName", "Items", "MakeUp", "Moodles", "Moveables", "MultiStageBuild", "Recipes", 
             "Recorded_Media", "Sandbox", "Stash", "SurvivalGuide", "Tooltip", "UI"]
 
 class pz_translator_zx:
     
-    def __init__(self,baseDir:str,source:str="EN",config:str|None=None,gitAtr:bool=False):
-        if config:
-            self.fromConfig(config)
+    def __init__(self,baseDir:str="",source:str="EN",hasConfig:bool=True,gitAtr:bool=False):
+        self.baseDir = baseDir
+        if hasConfig:
+            self.fromConfig(os.path.join(os.path.dirname(__file__),"config.ini"))
         else:
-            self.baseDir = baseDir
             self.sourceLang = LanguagesDict[source]
-            self.translator = GoogleTranslator(self.sourceLang["tr_code"])
+        self.translator = GoogleTranslator(self.sourceLang["tr_code"])
         if gitAtr:
             self.checkGitAtributesFile()
 
@@ -25,11 +26,11 @@ class pz_translator_zx:
         from configparser import ConfigParser
         config = ConfigParser()
         config.read(file)
-        self.baseDir = config["Directories"][config["Translate"]["target"]]
+        self.baseDir = self.baseDir if self.baseDir else config["Directories"][config["Translate"]["target"]]
         source = config["Translate"]["source"]
-        # source = config.get("Translate","source")
         self.sourceLang = LanguagesDict[source]
-        self.translator = GoogleTranslator(self.sourceLang["tr_code"])
+        if not os.path.isdir(os.path.join(self.baseDir,self.sourceLang["id"])):
+            AssertionError()
         if "files" in config["Translate"]:
             self.files = [x for x in [x.strip() for x in config["Translate"]["files"].split(",")] if x in FileList]
         else:
@@ -236,5 +237,41 @@ class pz_translator_zx:
         with open(fPath,"w",encoding="utf-8") as f:
             f.write(text)
 
-if __name__ == '__main__':    
-    pz_translator_zx("",config="config.ini",gitAtr=True).translate_self()
+def translate_project(dir,args):
+    with open(os.path.join(dir,"project.json"),"r",encoding="utf-8") as f:
+        project = json.load(f)
+    for id in project["mods"]:
+        if id in project["workshop"]["excludes"]:
+            continue
+        modpath = pathlib.Path(dir,id,"media","lua","shared","Translate")
+        if not modpath.is_dir():
+            print("Invalid translation dir:",modpath.resolve())
+            continue
+        o = pz_translator_zx(modpath.resolve(),gitAtr=True)
+        o.translate_self()
+
+def translate_mod(dir,args):
+    modpath = pathlib.Path(dir,"media","lua","shared","Translate")
+    if modpath.is_dir():
+        o = pz_translator_zx(modpath.resolve(),gitAtr=True)
+        o.translate_self()
+    else:
+        print("Invalid translation dir:",modpath.resolve())
+
+if __name__ == '__main__':
+    import sys
+    print("args",sys.argv)
+    if len(sys.argv) == 1:
+        print("* Translating from config file *")
+        pz_translator_zx(gitAtr=True).translate_self()
+    elif not os.path.isdir(sys.argv[1]):
+        print("Directory does not exist:",sys.argv[1])
+    elif os.path.isfile(os.path.join(sys.argv[1],"project.json")):
+        print("* Translating project *")
+        translate_project(sys.argv[1],sys.argv[2:])
+    elif os.path.isfile(os.path.join(sys.argv[1],"mod.info")):
+        print("* Translating mod *")
+        translate_mod(sys.argv[1],sys.argv[2:])
+    else:
+        print("* Translating directory *")
+        pz_translator_zx(baseDir=sys.argv[1],gitAtr=True).translate_self()
