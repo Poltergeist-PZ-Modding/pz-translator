@@ -10,6 +10,12 @@ FileList = [ "Challenge", "ContextMenu", "DynamicRadio", "EvolvedRecipeName", "F
             "IG_UI", "ItemName", "Items", "MakeUp", "Moodles", "Moveables", "MultiStageBuild", "Recipes", 
             "Recorded_Media", "Sandbox", "Stash", "SurvivalGuide", "Tooltip", "UI"]
 
+def varsMod(text:str):
+    return text.replace("<","<{").replace(">","}>").replace("%1","{%1}")
+
+def varsDemod(text:str):
+    return text.replace("{%1}","%1").replace("<{","<").replace("}>",">")
+
 class pz_translator_zx:
     
     def __init__(self,baseDir:str="",source:str="EN",hasConfig:bool=True,gitAtr:bool=False):
@@ -26,43 +32,46 @@ class pz_translator_zx:
         from configparser import ConfigParser
         config = ConfigParser()
         config.read(file)
-        self.baseDir = self.baseDir if self.baseDir else config["Directories"][config["Translate"]["target"]]
         source = config["Translate"]["source"]
+
+        assert os.path.isdir(os.path.join(self.baseDir,source)), "Missing source directory, wrong path?\nDir: " + os.path.join(self.baseDir,source)
+
+        self.baseDir = self.baseDir if self.baseDir else config["Directories"][config["Translate"]["target"]]
         self.sourceLang = LanguagesDict[source]
-        if not os.path.isdir(os.path.join(self.baseDir,self.sourceLang["id"])):
-            AssertionError()
         if "files" in config["Translate"]:
             self.files = [x for x in [x.strip() for x in config["Translate"]["files"].split(",")] if x in FileList]
         else:
             self.files = FileList
-        # self.translateLanguages = self.getLanguagesFromConfig(config)
-        self.translateLanguages = []
-        # createDirs = config["Translate"]["createDirs"]
-        createDirs = config.getboolean("Translate","createDirs")
-        languages = None
-        if "languages" in config["Translate"]:
-            languages = [x for x in [x.strip() for x in config["Translate"]["languages"].split(",")] if x in LanguagesDict]
+        if "languagesExclude" in config["Translate"]:
+            languagesExclude = {x for x in [x.strip() for x in config["Translate"]["languagesExclude"].split(",")] if x in LanguagesDict}
         else:
-            languages = LanguagesDict
-        languagesBlacklist = None
-        if "languagesBlacklist" in config["Translate"]:
-            languagesBlacklist = {x for x in [x.strip() for x in config["Translate"]["languagesBlacklist"].split(",")] if x in LanguagesDict}
+            languagesExclude = set()
+        languagesExclude.add(source)
+        if "languagesTranslate" in config["Translate"]:
+            languagesTranslate = [x for x in [x.strip() for x in config["Translate"]["languagesTranslate"].split(",")] if x not in languagesExclude and x in LanguagesDict]
         else:
-            languagesBlacklist = {}
-        for id in languages:
-            if id == source or id in languagesBlacklist:
-                continue
-            if os.path.isdir(os.path.join(self.baseDir,id)):
-                self.translateLanguages.append(LanguagesDict[id])
-            elif createDirs:
-                pathlib.Path(self.getFilePath(id)).mkdir()
-                self.translateLanguages.append(LanguagesDict[id])
+            languagesTranslate = [x for x in LanguagesDict if x not in languagesExclude]
+        if "languagesCreate" in config["Translate"]:
+            languagesCreate = {x for x in [x.strip() for x in config["Translate"]["languagesCreate"].split(",")] if x in languagesTranslate}
+        else:
+            languagesCreate = languagesTranslate
+        self.translateLanguages = self.getLanguagesForTranslate(languagesTranslate,languagesCreate)
 
     def getFilePath(self,langId: str, file: str = None):
         if not file:
             return os.path.join(self.baseDir, langId)
         else:
             return os.path.join(self.baseDir, langId, file + "_" + langId + ".txt")
+        
+    def getLanguagesForTranslate(self,translate:list|dict,create:set):
+        translateLanguages = []
+        for id in translate:
+            if os.path.isdir(os.path.join(self.baseDir,id)):
+                translateLanguages.append(LanguagesDict[id])
+            elif id in create:
+                pathlib.Path(self.getFilePath(id)).mkdir()
+                translateLanguages.append(LanguagesDict[id])
+        return translateLanguages
 
     def readSourceFile(self,file:str):
         try:
@@ -133,35 +142,37 @@ class pz_translator_zx:
         except:
             pass
     
-    # def translate_single(oTexts: dict, tTexts):
-    #     for key, value in oTexts.items():
-    #         if key not in tTexts:
-    #             try:
-    #                 translation = translator.translate(value, tLang["tr_code"], oLang.lower())
-    #                 tTexts[key] = translation.text
-    #             except:
-    #                 print("Failed to translate: " + tTexts["language"] + " | " + value)
-    #                 tTexts[key] = "tr?: " + value
+    def translate_single(self,tLang,oTexts: dict, tTexts:dict):
+        untranslated = len(oTexts) + 1 - len(tTexts)
+        if untranslated > 0:
+            print(" - Untranslated texts size: ",untranslated)
+        for key, value in oTexts.items():
+            if key not in tTexts:
+                try:
+                    tTexts[key] = varsDemod(self.translator.translate(varsMod(value)))
+                except:
+                    print(" - Failed to translate: " + tTexts["language"] + " | " + value)
+                    tTexts[key] = "tr?: " + value
 
     def translate_batch(self,tLang,oTexts,tTexts):
         keys, values = [],[]
         for key in oTexts:
             if key not in tTexts:
                 keys.append(key)
-                values.append(oTexts[key].replace("<","<{").replace(">","}>").replace("%1","{%1}"))
+                values.append(varsMod(oTexts[key]))
         if keys:
             try:
-                print("    Translation size: ",len(values))
+                print(" - Untranslated texts size: ",len(values))
                 translations = self.translator.translate_batch(values)
                 for i,key in enumerate(keys):
-                    tTexts[key] = translations[i].replace("{%1}","%1").replace("<{","<").replace("}>",">")
+                    tTexts[key] = varsDemod(translations[i])
                     try:
                         tTexts[key].encode(tLang["charset"])
                     except:
-                        print("can not encode: ",key,tTexts[key])
+                        print(" - can not encode: ",key,tTexts[key])
             except:
                 for i,k in enumerate(keys):
-                    print("Failed to translate: " + tTexts["language"] + " | " + values[i])
+                    print(" - Failed to translate: " + tTexts["language"] + " | " + values[i])
                     tTexts[k] = "tr?: " + values[i]
 
     def getTranslations(self,oTexts: dict, tLang: dict, file: str):
@@ -189,22 +200,15 @@ class pz_translator_zx:
                 self.translator.target = lang["tr_code"]
                 self.writeTranslation(lang,file,templateText.format_map(self.getTranslations(oTexts,lang,file)))
 
-    def translate(self,languages:list|dict=LanguagesDict,files:list=FileList,createDirs:bool=False):
-        self.translateLanguages = []
+    def translate(self,languages:list|dict,files:list,languagesCreate:set[str]|None=set()):
         self.files = files
-        sourceId = self.sourceLang["id"]
-        for id in languages:
-            if id == sourceId:
-                continue
-            if os.path.isdir(os.path.join(self.baseDir,id)):
-                self.translateLanguages.append(LanguagesDict[id])
-            elif createDirs:
-                pathlib.Path(self.getFilePath(id)).mkdir()
-                self.translateLanguages.append(LanguagesDict[id])
+        self.translateLanguages = self.getLanguagesForTranslate(languages,languagesCreate)
         self.translate_self()
 
-    # used to reincode files
     def convertTranslations(self,readEncodes:dict,languages:list=LanguagesDict,files:list=FileList):
+        '''
+        attempt to convert to appropriate encoding
+        '''
         for id in languages:
             lang = LanguagesDict[id]
             for file in files:
@@ -260,7 +264,6 @@ def translate_mod(dir,args):
 
 if __name__ == '__main__':
     import sys
-    print("args",sys.argv)
     if len(sys.argv) == 1:
         print("* Translating from config file *")
         pz_translator_zx(gitAtr=True).translate_self()
