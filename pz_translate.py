@@ -1,8 +1,9 @@
 import os
 import pathlib
-from pz_languages_info import getLanguages
-from deep_translator import GoogleTranslator
+from shutil import copyfile
 import json
+from deep_translator import GoogleTranslator
+from pz_languages_info import getLanguages
 
 LanguagesDict = getLanguages(False)
 
@@ -233,13 +234,8 @@ class pz_translator_zx:
 
     def checkGitAtributesFile(self):
         fPath = os.path.join(self.baseDir,".gitattributes")
-        if os.path.exists(fPath):
-            return
-        text = None
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".gitattributes-template.txt"),"r",encoding="utf-8") as f:
-            text = f.read()
-        with open(fPath,"w",encoding="utf-8") as f:
-            f.write(text)
+        if not os.path.exists(fPath):
+            copyfile(os.path.join(os.path.dirname(__file__), ".gitattributes-template.txt"),fPath,follow_symlinks=False)
 
 def translate_project(dir,args):
     with open(os.path.join(dir,"project.json"),"r",encoding="utf-8") as f:
