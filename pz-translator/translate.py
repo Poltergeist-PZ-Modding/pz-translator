@@ -104,8 +104,6 @@ class Translator:
             if _path.exists():
                 return _path
         else:
-            #FIXME debug, check pz folder name 
-            print("root tuple: ", self.root.parts[-4:])
             _path = self.root / "TV_Radio"
             if _path.exists():
                 return _path
@@ -245,18 +243,14 @@ class Translator:
 
         for file in self.files:
             source_fp = self.get_path(self.source_lang["name"],file)
-            source_template, source_map = file.parse_source(source_fp, self.source_lang)
-            # if source_fp.is_file():
-            #     source_template, source_map = file.parse_source(source_fp, self.source_lang)
-            # else:
-            #     source_template, source_map = None, None
+            template, source_map = file.parse_source(source_fp, self.source_lang)
             for lang in self.languages:
                 # translate, paste template, or remove.
                 if source_map:
                     print(f"Begin Translation Check for: {file.name}, {lang['name']}, {lang['text']}")
-                    self.write_translation(lang,file,source_template.format_map(self.get_translations(source_map,lang,file)))
-                elif source_template:
-                    self.write_translation(lang,file,source_template)
+                    self.write_translation(lang,file,template.safe_substitute(self.get_translations(source_map,lang,file)))
+                elif template:
+                    self.write_translation(lang,file,template)
                 else:
                     self.get_path(lang["name"],file).unlink(missing_ok=True)
         print(f"Finished with {self.warnings} warnings.")
@@ -321,47 +315,38 @@ class Translator:
         print(f" - Warning: {message}")
 
 def try_translate_project(root: Path) -> bool:
-    """
-    translate project
-    """
+    'translate project'
 
-    if not root.joinpath("project.json").is_file():
-        return False
-
-    print("* Translating project *")
-    with open(root.joinpath("project.json"),"r",encoding="utf-8") as f:
-        project = json.load(f)
-    for mod_id in project["mods"]:
-        if mod_id in project["workshop"]["excludes"]:
-            continue
-        modpath = root.joinpath(mod_id,"media","lua","shared","Translate")
-        if modpath.is_dir():
-            Translator(modpath).translate_main()
-        else:
-            print(f"Invalid translation dir {modpath}")
-    return True
+    if root.joinpath("project.json").is_file():
+        print(f"< Translating project: {root.name} >")
+        r = False
+        with open(root.joinpath("project.json"),"r",encoding="utf-8") as f:
+            project = json.load(f)
+        exclude = project.get("workshop",{}).get("excludes",[])
+        for mod_id in project.get("mods",[]):
+            if mod_id in exclude:
+                continue
+            r = try_translate_mod(root / mod_id) or r
+        return r
+    return False
 
 def try_translate_mod(root: Path) -> bool:
-    """
-    translate mod
-    """
+    'translate mod'
 
-    if not root.joinpath("mod.info").is_file():
-        return False
-
-    print("* Translating mod *")
-    translate_path = root.joinpath("media","lua","shared","Translate")
-    if translate_path.is_dir():
-        Translator(translate_path).translate_main()
-    else:
+    if root.joinpath("mod.info").is_file():
+        print(f"< Translating mod: {root.name} >")
+        translate_path = root.joinpath("media","lua","shared","Translate")
+        if translate_path.is_dir():
+            Translator(translate_path).translate_main()
+            return True
         print("Invalid mod translation dir: ",translate_path)
-    return True
+    return False
 
 def main():
     'main'
-    
+
     if len(sys.argv) == 1:
-        print("* Translating from config file *")
+        print("< Translating from config file >")
         Translator().translate_main()
     else:
         root = Path(sys.argv[1]).resolve()
@@ -372,7 +357,7 @@ def main():
         elif try_translate_mod(root):
             return
         else:
-            print("* Translating directory *")
+            print("< Translating directory >")
             Translator(root).translate_main()
 
 if __name__ == '__main__':

@@ -3,7 +3,14 @@ File Specific Classes
 """
 
 from pathlib import Path
+from string import Template
+from io import StringIO
 from typing import Tuple
+
+class TranslationTemplate(Template):
+    'Custom Template'
+    idpattern = Template.delimiter
+    braceidpattern = r'([^}]*)'
 
 class TranslateType():
     "Base class"
@@ -19,7 +26,7 @@ class TranslateType():
         """return file path string for language"""
         raise NotImplementedError()
 
-    def parse_source(self, fp: Path, lang: dict) -> Tuple[str, dict]:
+    def parse_source(self, fp: Path, lang: dict) -> Tuple[TranslationTemplate, dict]:
         "read source file"
         raise NotImplementedError()
 
@@ -27,14 +34,21 @@ class TranslateType():
         "read translation file"
         raise NotImplementedError()
 
-    def add_to_template(self, template: list, text: str, escape: bool = True, post_escape: list = None):
+    def add_to_template(self, template: StringIO, text: str = None, is_key: bool = False, replace: list = None):
         "add to template"
-        if escape:
-            text = text.replace("{","{{").replace("}","}}")
-        if post_escape:
-            for k,v in post_escape:
-                text = text.replace(k,v)
-        template.append(text)
+
+        if template is None:
+            return
+        if is_key:
+            template.write("${"+text+"}")
+        else:
+            text = text.replace("$","$$")
+            if replace:
+                for k,v in replace:
+                    text = text.replace(k,v)
+            template.write(text)
+
+
 
 class File(TranslateType):
     "File class"
@@ -44,22 +58,21 @@ class File(TranslateType):
     def get_path(self, lang: str) -> str:
         return f'{lang}/{self.name}_{lang}.txt'
 
-    def parse_source(self, fp: Path, lang: dict) -> Tuple[str, dict]:
+    def parse_source(self, fp: Path, lang: dict) -> Tuple[TranslationTemplate, dict]:
         mapping = {}
-        t = self.parse_file(fp, lang, mapping, True, True)
-        return (t,mapping)
+        return (self.parse_file(fp, lang, mapping, True, True), mapping)
 
     def parse_translation(self, fp: Path, lang: dict, mapping: dict, is_import: bool = False):
         self.parse_file(fp, lang, mapping, False, not is_import)
 
-    def parse_file(self, fp: str, lang: dict, mapping: dict, create_template: bool, check_duplicate: bool) -> str:
+    def parse_file(self, fp: str, lang: dict, mapping: dict, create_template: bool, check_duplicate: bool) -> TranslationTemplate:
         """
         parse the translation file
         skip substitution of stripped keys: Recipe_, DisplayName_, DisplayName, EvolvedRecipeName_, ItemName_ (name related)
         concatenation: join and format lines.
         """
 
-        template = []
+        template = StringIO() if create_template else None
         mapping["__language_name__"] = lang["name"]
 
         with open(fp,'r',encoding=lang["charset"]) as f:
@@ -69,9 +82,7 @@ class File(TranslateType):
             lines = None
 
             line = f.readline()
-
-            if create_template:
-                self.add_to_template(template, line, post_escape=[("_" + lang["name"], "_{__language_name__}")])
+            self.add_to_template(template, line, False, [("_" + lang["name"], "_${__language_name__}")])
 
             for line in f:
                 stripped = line.strip()
@@ -87,15 +98,15 @@ class File(TranslateType):
                     if self.PREFIXES and not any(key.startswith(pre) for pre in self.PREFIXES):
                         self.parent.warn(f'Possibly misspelled key: {key}')
                     # fix for format
-                    key = key.replace(".","-")
+                    key = key.replace("}","{")
                     if check_duplicate and key in mapping:
                         self.parent.warn(f'Duplicate key: {key}')
                     if not key:
                         self.parent.warn("No key in:\n" + line)
-                    elif create_template:
-                        self.add_to_template(template, line[:index2+1], True)
-                        self.add_to_template(template, "{" + key + "}", False)
-                        self.add_to_template(template, line[index3:], True)
+                    else:
+                        self.add_to_template(template, line[:index2+1])
+                        self.add_to_template(template, key, True)
+                        self.add_to_template(template, line[index3:])
                     if ".." in stripped:
                         concat = True
                 elif stripped and "--" not in stripped and (stripped.endswith("..") or concat):
@@ -124,14 +135,18 @@ class File(TranslateType):
                         self.parent.warn(f'{key} is missing translation')
                     # set text to mapping
                     mapping[key] = text
-                elif create_template:
+                else:
                     self.add_to_template(template,line)
 
                 key = ""
                 text = ""
                 concat = False
 
-            return "".join(template)
+        if template:
+            text = template.getvalue()
+            template.close()
+            return TranslationTemplate(text)
+        return None
 
 class Challenge(File):
     """ Challenge """
@@ -254,7 +269,7 @@ class MapInfo(TranslateType): #TODO test
     def get_path(self, lang: str) -> str:
         return f'{lang}/{self.name}'
 
-    def parse_source(self, fp: Path, lang: dict):
+    def parse_source(self, fp: Path, lang: dict) -> Tuple[TranslationTemplate, dict]:
         with open(fp,"r",encoding=lang["charset"]) as f:
             return "{text}", {"text": f.read()}
 

@@ -4,8 +4,8 @@ Project Zomboid translations automation scripts, initialise translations with au
 
 ## Requirements
 
-- Python 
-- [deep_translator](https://pypi.org/project/deep-translator/)
+- Python 3.11
+- [deep_translator](https://pypi.org/project/deep-translator/) 1.11
 
 ## How to use
 
@@ -49,3 +49,7 @@ You can add a task like this to run the script. Replace `${path_to_script}/pz_tr
 ## Text Translator
 
 Deep translator supports different translators, you can find more information at: [https://pypi.org/project/deep-translator/](https://pypi.org/project/deep-translator/)
+
+## Warning!
+
+The script rewrites the translation files, if you are not using version control then keep backups.
