@@ -253,7 +253,7 @@ class Translator:
                     self.write_translation(lang,file,template)
                 else:
                     self.get_path(lang["name"],file).unlink(missing_ok=True)
-        print(f"Finished with {self.warnings} warnings.")
+        print(f"\nFinished with {self.warnings} warnings.")
 
     def translate_specific(self, languages: list | dict, files: list, languages_create: set[str]):
         """
@@ -364,4 +364,6 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print("Process manually terminated")
+        print("\nInturruted by user")
+    except ConnectionError:
+        print("\nConnection error")
