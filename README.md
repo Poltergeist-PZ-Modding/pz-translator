@@ -24,7 +24,7 @@ py "path_to_script/pz_translate.py" "path to mod folder"
 
 ### VSCode task
 
-You can add a task like this to run the script. Replace `${path_to_script}/pz_translate.py` with the path to the script. This will target the workspaceFolder for translation.
+You can add a task like this to run the script. Replace `repository/pz-translator/translate.py` with the path to the script. This will target the workspaceFolder for translation.
 ```json
 {
   "version": "2.0.0",
@@ -33,7 +33,7 @@ You can add a task like this to run the script. Replace `${path_to_script}/pz_tr
       "label": "Translate Project",
       "type": "shell",
       "command": "py",
-      "args": [ "${path_to_script}/pz_translate.py", "${workspaceFolder}" ],
+      "args": [ "repository/pz-translator/translate.py", "${workspaceFolder}" ],
       "group": "none",
       "presentation": {
         "reveal": "always",
