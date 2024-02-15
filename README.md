@@ -9,22 +9,28 @@ Project Zomboid translations automation scripts, initialise translations with au
 
 ## How to use
 
-The script can be used from the translation folder, or the mod folder, or the project folder with pzstudio structure.
+1. Copy `config.ini` from `templates` to the top level folder.
+2. run `repository/pz-translator/translate.py` directly or using the command line.
 
-### execute the pz_translate.py file
+You can pass the script the path to either of these and it will work.
+- **Translate** folder
+- **Mod** folder (r: mod.info)
+- **Project** folder (r: project.json like from pzstudio)
 
-You can run the script directly, without any arguments and it will translate the folder set in the `config.ini`.
+### running the script basics
+
+The script will use the path set in the `config.ini` file; [Directories] Target if a path isn't provided as argument. You can run the script directly by clicking on it. or by using the command line.
 
 ### command line
 
-example for windows
+example for windows, you can also write this into a cmd file for shortcut.
 ```
-py "path_to_script/pz_translate.py" "path to mod folder"
+py "repository/pz-translator/translate.py" "path to translate"
 ```
 
 ### VSCode task
 
-You can add a task like this to run the script. Replace `repository/pz-translator/translate.py` with the path to the script. This will target the workspaceFolder for translation.
+You can add a task like this to run the script. This will target the workspaceFolder for translation.
 ```json
 {
   "version": "2.0.0",
@@ -45,6 +51,10 @@ You can add a task like this to run the script. Replace `repository/pz-translato
 
 ```
 > See https://go.microsoft.com/fwlink/?LinkId=733558 for the documentation about the tasks.json format
+
+## Languages
+
+Select a handful of languages that either translate effectively or can be improved, as not all languages translate well or have variations, such as Brazilian Portuguese (pt-BR).
 
 ## Text Translator
 

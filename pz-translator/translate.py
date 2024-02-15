@@ -42,8 +42,10 @@ class Translator:
     """
 
     def __init__(self, translate_path: Path = None):
+        config_path = Path(__file__).parent.parent / "config.ini"
+        assert config_path.is_file(), f"Missing config file: {config_path}"
         self.config = ConfigParser()
-        self.config.read(Path(__file__).parent.parent / "config.ini")
+        self.config.read(config_path)
 
         if translate_path is None:
             self.root = Path(self.config["Directories"]["Translate"])
@@ -51,7 +53,6 @@ class Translator:
             self.root = translate_path
         source = self.config["Translate"]["source"]
         source_path = self.get_path(source)
-
         assert source_path.is_dir(), f"Missing source directory: {source_path}"
 
         self.warnings = 0
@@ -364,6 +365,4 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print("\nInturruted by user")
-    except ConnectionError:
-        print("\nConnection error")
+        print("\nInterrupted by user")
