@@ -159,8 +159,11 @@ class Translator:
             for each in option.split():
                 each = each.strip()
                 tclass = self.get_translation_type(each)
-                if tclass is not None:
-                    files.append(tclass(self))
+                if tclass is None:
+                    continue
+                tobj = tclass(self)
+                if self.get_path(self.source_lang["name"], tobj).is_file():
+                    files.append(tobj)
         else:
             suffix = f'_{self.source_lang["name"]}.txt'
             source_path = self.get_path(self.source_lang["name"])
@@ -181,55 +184,61 @@ class Translator:
             #     files.append(tclass(self))
         return files
 
-    def translate_missing_single(self, tlang: dict, src_map: dict, tr_map: dict):
-        """
-        translate missing texts using translators 'translate' function
-        """
+    def translate_missing(self, tlang: dict, file: TranslateType, src_map: dict, tr_map: dict):
+        'translate missing texts using translators single text function'
 
-        untranslated = [x for x in src_map if x not in tr_map]
+        #import saved auto-translations
+        file_path = self.get_path(tlang["name"], file)
+        temp_file_path = file_path.parent.joinpath(f'{file_path.stem}_translator_temp.txt')
+        auto_translations = {}
+        if temp_file_path.is_file():
+            file.parse_translation(temp_file_path, tlang, auto_translations, True)
+            for key, text in auto_translations.items():
+                if key not in tr_map:
+                    tr_map[key] = text 
+        #check missing and translate
+        untranslated = [key for key in src_map if not tr_map.get(key, None)]
         if untranslated:
             print(f" - Translating number of texts: {len(untranslated)}")
             self.translator.target = tlang["tr_code"]
-            for key in untranslated:
-                tr_map[key] = tags_demod(self.translator.translate(tags_mod(src_map[key])))
-
-    def translate_missing_batch(self, trlang: dict, or_texts: dict, tr_texts: dict):
-        """
-        translate missing texts using translators 'batch translate' function
-        """
-        keys, values = [],[]
-        for key in or_texts:
-            if key not in tr_texts:
-                keys.append(key)
-                values.append(tags_mod(or_texts[key]))
-        if values:
-            print(" - Untranslated texts size: ",len(values))
-            self.translator.target = trlang["tr_code"]
-            translations = self.translator.translate_batch(values)
-            for i,key in enumerate(keys):
-                tr_texts[key] = tags_demod(translations[i])
+            try:
+                for key in untranslated:
+                    tr_map[key] = tags_demod(self.translator.translate(tags_mod(src_map[key])))
+            except KeyboardInterrupt:
+                for key in untranslated:
+                    if key not in tr_map:
+                        break
+                    auto_translations[key] = tr_map[key]
+                file.export(temp_file_path, tlang, auto_translations)
+                raise
+            except Exception:
+                self.warn("failed to translate file")
+                for key in reversed(untranslated):
+                    if key in tr_map:
+                        break
+                    tr_map[key] = ""
+        #remove temp file
+        temp_file_path.unlink(missing_ok=True)
 
     def get_translations(self, source_texts: dict, tr_lang: dict, file: TranslateType) -> dict:
-        """
-        return dictionary with translation texts
-        """
+        'return dictionary with translation texts'
 
         tr_map = {}
-        fp = self.get_path(tr_lang["name"],file)
+        tr_map["__language_name__"] = tr_lang["name"]
+        # add existing tranlsations
+        fp = self.get_path(tr_lang["name"], file)
         if fp.is_file():
             file.parse_translation(fp, tr_lang, tr_map)
-        # if there is an import source then parse them on top of current translations
+        # import translations on top
         fp = self.get_import_path(tr_lang["name"],file)
         if fp and fp.is_file():
             file.parse_translation(fp, tr_lang, tr_map, True)
-        self.translate_missing_single(tr_lang,source_texts,tr_map)
-
+        # translate missing
+        self.translate_missing(tr_lang, file, source_texts, tr_map)
         return tr_map
 
     def write_translation(self, lang: dict, file: TranslateType, text: str):
-        """
-        write the translation file
-        """
+        'write the translation file'
 
         try:
             with open(self.get_path(lang["name"],file),"w",encoding=lang["charset"],errors="replace") as f:
@@ -279,9 +288,9 @@ class Translator:
             for file in files:
                 file_path = self.get_path(lang["name"],file)
                 if file_path.is_file():
-                    with open(file_path,"r", encoding=read[lang],errors=errors) as f:
+                    with open(file_path, "r", encoding=read[lang["name"]], errors=errors) as f:
                         text = f.read()
-                    with open(file_path,"w", encoding=lang["charset"],errors=errors) as f:
+                    with open(file_path, "w", encoding=lang["charset"], errors=errors) as f:
                         f.write(text)
 
     def reencode_initial(self):
@@ -291,7 +300,7 @@ class Translator:
         '''
 
         self.reencode_translations(
-            { lang["name"]: lang["charset"] for lang in self.languages },
+            { lang["name"]: lang["charset"] for lang in PZ_LANGUAGES.values() },
             [self.source_lang] + self.languages,
             self.files
         )

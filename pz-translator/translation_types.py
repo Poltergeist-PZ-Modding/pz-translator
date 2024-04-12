@@ -17,7 +17,7 @@ class TranslateType():
 
     name: str
 
-    def __init__(self, parent,name: str = None):
+    def __init__(self, parent, name: str = None):
         self.parent = parent
         if name:
             self.name = name
@@ -48,7 +48,9 @@ class TranslateType():
                     text = text.replace(k,v)
             template.write(text)
 
-
+    def export(self, fp: Path, language: dict, texts: dict):
+        'write the translations from dictionary'
+        raise NotImplementedError()
 
 class File(TranslateType):
     "File class"
@@ -68,12 +70,10 @@ class File(TranslateType):
     def parse_file(self, fp: str, lang: dict, mapping: dict, create_template: bool, check_duplicate: bool) -> TranslationTemplate:
         """
         parse the translation file
-        skip substitution of stripped keys: Recipe_, DisplayName_, DisplayName, EvolvedRecipeName_, ItemName_ (name related)
         concatenation: join and format lines.
         """
 
         template = StringIO() if create_template else None
-        mapping["__language_name__"] = lang["name"]
 
         with open(fp,'r',encoding=lang["charset"]) as f:
             key = ""
@@ -95,10 +95,19 @@ class File(TranslateType):
                     index3 = line.rindex("\"")
                     key = line[:index1].strip()
                     text = line[index2+1:index3]
+                    if ".." in stripped:
+                        concat = True
                     if self.PREFIXES and not any(key.startswith(pre) for pre in self.PREFIXES):
                         self.parent.warn(f'Possibly misspelled key: {key}')
+                    #TODO apply replace for improved support
+                    # for prefix in ["Recipe_", "DisplayName_", "DisplayName", "EvolvedRecipeName_", "ItemName_"]:
+                    #     if key.startswith(prefix):
+                    #         key.replace(prefix,"")
+                    #         break
+                    # key = next((key.replace(prefix, "") for prefix in ["recipe", "DisplayName_"] if key.startswith(prefix)), key)
+
                     # fix for format
-                    key = key.replace("}","{")
+                    key = key.replace("{","}")
                     if check_duplicate and key in mapping:
                         self.parent.warn(f'Duplicate key: {key}')
                     if not key:
@@ -107,8 +116,6 @@ class File(TranslateType):
                         self.add_to_template(template, line[:index2+1])
                         self.add_to_template(template, key, True)
                         self.add_to_template(template, line[index3:])
-                    if ".." in stripped:
-                        concat = True
                 elif stripped and "--" not in stripped and (stripped.endswith("..") or concat):
                     if concat and '"' in stripped:
                         text = stripped[stripped.index("\"")+1:stripped.rindex("\"")]
@@ -147,6 +154,12 @@ class File(TranslateType):
             template.close()
             return TranslationTemplate(text)
         return None
+    
+    def export(self, fp: Path, language: dict, texts: dict):
+        texts.pop("__language_name__", None)
+        lines = "\n".join([f'    {key} = "{text}",' for key, text in texts.items()])
+        with open(fp, "w", encoding=language["charset"], errors="replace") as file:
+            file.write(f'{self.name}_{language["name"]} = {{\n{lines}\n}}\n')
 
 class Challenge(File):
     """ Challenge """
@@ -276,6 +289,10 @@ class MapInfo(TranslateType): #TODO test
     def parse_translation(self, fp: Path, lang: dict, mapping: dict, is_import: bool = False):
         with open(fp,"r",encoding=lang["charset"]) as f:
             mapping["text"] = f.read()
+
+    def export(self, fp: Path, language: dict, texts: dict):
+        with open(fp, "w", encoding=language["charset"], errors="replace") as file:
+            file.write(texts["text"])
 
 TRANSLATION_TYPES = {
     "Challenge": Challenge,

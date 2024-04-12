@@ -109,8 +109,27 @@ def get_languages_info(generate: bool = False) -> dict[str, dict]:
         d = generate_info()
         with open(ipath,"w",encoding="utf-8") as f:
             json.dump(d,f,indent=2)
+        write_gitattributes_template()
         return d
     with open(ipath,"r",encoding="utf-8") as f:
         return json.load(f)
+
+def write_gitattributes_template():
+    'write gitattributes based on languages info'
+
+    fp = pathlib.Path(__file__).parent.parent.joinpath("templates",".gitattributes")
+    with open(fp,"w",encoding="utf-8") as f:
+        f.write("""# Translation files are encoded differently per-language
+# see https://github.com/TheIndieStone/ProjectZomboidTranslations/blob/master/.gitattributes
+# see https://github.com/TheIndieStone/ProjectZomboidTranslations/issues/155
+""")
+        for name, lang in PZ_LANGUAGES.items():
+            f.write(f'{name}/*.txt text working-tree-encoding={lang["charset"].lower()} encoding=utf-8,\n')
+        f.write("""
+# exception: keep the language definition/credits utf-8
+*/credits.txt text working-tree-encoding=utf-8 encoding=utf-8
+*/language.txt text working-tree-encoding=utf-8 encoding=utf-8
+*/Translated by.txt text working-tree-encoding=utf-8 encoding=utf-8
+""")
 
 PZ_LANGUAGES = get_languages_info()

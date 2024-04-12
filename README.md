@@ -12,14 +12,18 @@ Project Zomboid translations automation scripts, initialise translations with au
 1. Copy `config.ini` from `templates` to the top level folder.
 2. run `repository/pz-translator/translate.py` directly or using the command line.
 
+You can pass the directory path of either of these to the script and it will work.
+- **Translate** folder
+- **Mod** folder (requires: mod.info)
+- **Project** folder (requires: project.json like from pzstudio)
+
 You can pass the script the path to either of these and it will work.
 - **Translate** folder
 - **Mod** folder (r: mod.info)
 - **Project** folder (r: project.json like from pzstudio)
-
-### running the script basics
-
-The script will use the path set in the `config.ini` file; [Directories] Target if a path isn't provided as argument. You can run the script directly by clicking on it. or by using the command line.
+> Notes
+- You can run the script directly, without any arguments and it will translate the folder set in the `config.ini` file; [Directories] Target.
+- Online translations can take a long time if you have a lot of texts, you can use KeyboardInterrupt (CTRL + C) to quit and the translated texts progress will be saved.
 
 ### command line
 
