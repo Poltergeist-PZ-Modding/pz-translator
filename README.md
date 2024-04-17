@@ -17,10 +17,6 @@ You can pass the directory path of either of these to the script and it will wor
 - **Mod** folder (requires: mod.info)
 - **Project** folder (requires: project.json like from pzstudio)
 
-You can pass the script the path to either of these and it will work.
-- **Translate** folder
-- **Mod** folder (r: mod.info)
-- **Project** folder (r: project.json like from pzstudio)
 > Notes
 - You can run the script directly, without any arguments and it will translate the folder set in the `config.ini` file; [Directories] Target.
 - Online translations can take a long time if you have a lot of texts, you can use KeyboardInterrupt (CTRL + C) to quit and the translated texts progress will be saved.
